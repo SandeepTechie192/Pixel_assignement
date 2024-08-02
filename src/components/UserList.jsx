@@ -39,7 +39,9 @@ const UserList = () => {
       filtered = filtered.filter(user => user.gender === filters.gender);
     }
 
-    setFilteredUsers(filtered.slice(0, currentPage * itemsPerPage));
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    setFilteredUsers(filtered.slice(startIndex, endIndex));
   }, [filters, users, currentPage]);
 
   const handleFilterChange = (filterName, value) => {
@@ -48,19 +50,10 @@ const UserList = () => {
   };
 
   const loadMore = useCallback(() => {
-    setCurrentPage((prevPage) => prevPage + 1);
-  }, []);
-
-  const lastUserElementRef = useCallback(node => {
-    if (status === 'loading') return;
-    if (observer.current) observer.current.disconnect();
-    observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting) {
-        loadMore();
-      }
-    });
-    if (node) observer.current.observe(node);
-  }, [status, loadMore]);
+    if ((currentPage * itemsPerPage) < users.length) {
+      setCurrentPage((prevPage) => prevPage + 1);
+    }
+  }, [currentPage, users.length]);
 
   const handlePrevPage = () => {
     if (currentPage > 1) {
@@ -109,17 +102,13 @@ const UserList = () => {
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {filteredUsers.map((user, index) => {
-            if (filteredUsers.length === index + 1) {
-              return <UserCard key={user.id} user={user} ref={lastUserElementRef} />;
-            } else {
-              return <UserCard key={user.id} user={user} />;
-            }
+            return <UserCard key={user.id} user={user} />;
           })}
         </tbody>
       </table>
       <div className="flex justify-center space-x-4 mt-4">
         <button onClick={handlePrevPage} className="border p-2" disabled={currentPage === 1}>Prev</button>
-        <button onClick={loadMore} className="border p-2">Next</button>
+        <button onClick={loadMore} className="border p-2" disabled={(currentPage * itemsPerPage) >= users.length}>Next</button>
       </div>
     </div>
   );
